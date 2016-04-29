@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"io"
 	"testing"
 )
 
@@ -10,7 +11,14 @@ func TestNtimes(t *testing.T) {
 	stdout := new(bytes.Buffer)
 	stderr := new(bytes.Buffer)
 
-	ntimes(3, "echo", []string{"foo", "bar", "baz"}, stdin, stdout, stderr)
+	stdoutCh := make(chan io.ReadWriter)
+	exitCh := make(chan bool)
+
+	go printer(stdout, stdoutCh, exitCh)
+
+	ntimes(3, "echo", []string{"foo", "bar", "baz"}, stdin, stdout, stderr, stdoutCh, 1)
+
+	exitCh <- true
 
 	expected := "foo bar baz\nfoo bar baz\nfoo bar baz\n"
 	actual := stdout.String()
