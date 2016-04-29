@@ -24,7 +24,7 @@ var opts Options
 func main() {
 	parser := flags.NewParser(&opts, flags.Default^flags.PrintErrors)
 	parser.Name = AppName
-	parser.Usage = "[OPTIONS] -- COMMAND"
+	parser.Usage = "N [OPTIONS] -- COMMAND"
 
 	args, err := parser.Parse()
 
