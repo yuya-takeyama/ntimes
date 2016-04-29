@@ -14,12 +14,12 @@ import (
 
 const AppName = "ntimes"
 
-type Options struct {
+type options struct {
 	Parallels   int  `short:"p" long:"parallels" description:"Parallel degree of execution" default:"1"`
 	ShowVersion bool `short:"v" long:"version" description:"Show version"`
 }
 
-var opts Options
+var opts options
 
 func main() {
 	parser := flags.NewParser(&opts, flags.Default^flags.PrintErrors)
