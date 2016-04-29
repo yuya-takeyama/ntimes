@@ -15,6 +15,7 @@ import (
 const AppName = "ntimes"
 
 type Options struct {
+	Parallels   int  `short:"p" long:"parallels" description:"Parallel degree of execution" default:"1"`
 	ShowVersion bool `short:"v" long:"version" description:"Show version"`
 }
 
@@ -50,18 +51,25 @@ func main() {
 
 	go printer(os.Stdout, stdoutCh, exitCh)
 
-	ntimes(cnt, cmdName, cmdArgs, os.Stdin, os.Stdout, os.Stderr, stdoutCh)
+	ntimes(cnt, cmdName, cmdArgs, os.Stdin, os.Stdout, os.Stderr, stdoutCh, opts.Parallels)
 
 	exitCh <- true
 }
 
-func ntimes(cnt int, cmdName string, cmdArgs []string, stdin io.Reader, stdout io.Writer, stderr io.Writer, stdoutCh chan io.ReadWriter) {
+func ntimes(cnt int, cmdName string, cmdArgs []string, stdin io.Reader, stdout io.Writer, stderr io.Writer, stdoutCh chan io.ReadWriter, parallels int) {
 	var wg sync.WaitGroup
+
+	sema := make(chan bool, parallels)
 
 	for i := 0; i < cnt; i++ {
 		wg.Add(1)
 		go func() {
-			defer wg.Done()
+			sema <- true
+
+			defer func() {
+				wg.Done()
+				<-sema
+			}()
 
 			stdoutBuffer := new(bytes.Buffer)
 
