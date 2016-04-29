@@ -1,14 +1,11 @@
-box: wercker/golang
-services:
-  - wercker/mysql
+box: tcnksm/gox
 build:
   steps:
     - setup-go-workspace
+    - wercker/golint
     - script:
         name: go get
         code: |
-          cd $WERCKER_SOURCE_DIR
-          go version
           go get -t ./...
     - script:
         name: go build
@@ -17,9 +14,4 @@ build:
     - script:
         name: go test
         code: |
-          export DB2YAML_MYSQL_HOST=$WERCKER_MYSQL_HOST
-          export DB2YAML_MYSQL_PORT=$WERCKER_MYSQL_PORT
-          export DB2YAML_MYSQL_USERNAME=$WERCKER_MYSQL_USERNAME
-          export DB2YAML_MYSQL_PASSWORD=$WERCKER_MYSQL_PASSWORD
-          export DB2YAML_MYSQL_DATABASE=$WERCKER_MYSQL_DATABASE
           go test ./...
