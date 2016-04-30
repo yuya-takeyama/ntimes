@@ -51,12 +51,12 @@ func main() {
 
 	go printer(os.Stdout, stdoutCh, exitCh)
 
-	ntimes(cnt, cmdName, cmdArgs, os.Stdin, os.Stdout, os.Stderr, stdoutCh, opts.Parallels)
+	ntimes(cnt, cmdName, cmdArgs, os.Stdin, os.Stderr, stdoutCh, opts.Parallels)
 
 	exitCh <- true
 }
 
-func ntimes(cnt int, cmdName string, cmdArgs []string, stdin io.Reader, stdout io.Writer, stderr io.Writer, stdoutCh chan io.ReadWriter, parallels int) {
+func ntimes(cnt int, cmdName string, cmdArgs []string, stdin io.Reader, stderr io.Writer, stdoutCh chan io.ReadWriter, parallels int) {
 	var wg sync.WaitGroup
 
 	sema := make(chan bool, parallels)
