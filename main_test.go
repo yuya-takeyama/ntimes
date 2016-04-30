@@ -16,7 +16,7 @@ func TestNtimes(t *testing.T) {
 
 	go printer(stdout, stdoutCh, exitCh)
 
-	ntimes(3, "echo", []string{"foo", "bar", "baz"}, stdin, stdout, stderr, stdoutCh, 1)
+	ntimes(3, "echo", []string{"foo", "bar", "baz"}, stdin, stderr, stdoutCh, 1)
 
 	exitCh <- true
 
