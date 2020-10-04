@@ -12,29 +12,41 @@ import (
 	flags "github.com/jessevdk/go-flags"
 )
 
-const AppName = "ntimes"
+const appName = "ntimes"
+
+var (
+	version   = ""
+	gitCommit = ""
+)
 
 type options struct {
 	Parallels   int  `short:"p" long:"parallels" description:"Parallel degree of execution" default:"1"`
 	ShowVersion bool `short:"v" long:"version" description:"Show version"`
 }
 
-var opts options
-
 func main() {
+	var opts options
 	parser := flags.NewParser(&opts, flags.Default^flags.PrintErrors)
-	parser.Name = AppName
+	parser.Name = appName
 	parser.Usage = "N [OPTIONS] -- COMMAND"
 
 	args, err := parser.Parse()
-
 	if err != nil {
-		fmt.Fprint(os.Stderr, err)
-		return
+		if flagsErr, ok := err.(*flags.Error); ok {
+			if flagsErr.Type == flags.ErrHelp {
+				parser.WriteHelp(os.Stderr)
+
+				return
+			}
+		}
+
+		errorf("flag parse error: %s", err)
+		os.Exit(1)
 	}
 
 	if opts.ShowVersion {
-		io.WriteString(os.Stdout, fmt.Sprintf("%s v%s, build %s\n", AppName, Version, GitCommit))
+		_, _ = io.WriteString(os.Stdout, fmt.Sprintf("%s v%s, build %s\n", appName, version, gitCommit))
+
 		return
 	}
 
@@ -63,6 +75,7 @@ func ntimes(cnt int, cmdName string, cmdArgs []string, stdin io.Reader, stderr i
 
 	for i := 0; i < cnt; i++ {
 		wg.Add(1)
+
 		go func() {
 			sema <- true
 
@@ -77,8 +90,8 @@ func ntimes(cnt int, cmdName string, cmdArgs []string, stdin io.Reader, stderr i
 			cmd.Stdin = stdin
 			cmd.Stdout = stdoutBuffer
 			cmd.Stderr = stderr
-			err := cmd.Run()
 
+			err := cmd.Run()
 			if err != nil {
 				panic(err)
 			}
@@ -94,9 +107,14 @@ func printer(stdout io.Writer, stdoutCh chan io.ReadWriter, exitCh chan bool) {
 	for {
 		select {
 		case r := <-stdoutCh:
-			io.Copy(stdout, r)
+			_, _ = io.Copy(stdout, r)
 		case <-exitCh:
 			return
 		}
 	}
+}
+
+func errorf(message string, args ...interface{}) {
+	subMessage := fmt.Sprintf(message, args...)
+	_, _ = fmt.Fprintf(os.Stderr, "%s: %s\n", appName, subMessage)
 }

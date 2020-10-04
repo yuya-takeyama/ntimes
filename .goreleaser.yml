@@ -1,0 +1,23 @@
+before:
+  hooks:
+    - go mod download
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    ldflags:
+      - -s -w
+      - -X main.version={{ .Version }}
+      - -X main.gitCommit={{ .ShortCommit }}
+
+archives:
+  - format_overrides:
+      - goos: windows
+        format: zip
+
+checksum:
+  name_template: 'checksums.txt'
