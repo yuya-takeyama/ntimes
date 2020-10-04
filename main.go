@@ -31,7 +31,6 @@ func main() {
 	parser.Usage = "N [OPTIONS] -- COMMAND"
 
 	args, err := parser.Parse()
-
 	if err != nil {
 		if flagsErr, ok := err.(*flags.Error); ok {
 			if flagsErr.Type == flags.ErrHelp {
@@ -46,7 +45,8 @@ func main() {
 	}
 
 	if opts.ShowVersion {
-		io.WriteString(os.Stdout, fmt.Sprintf("%s v%s, build %s\n", appName, version, gitCommit))
+		_, _ = io.WriteString(os.Stdout, fmt.Sprintf("%s v%s, build %s\n", appName, version, gitCommit))
+
 		return
 	}
 
@@ -75,6 +75,7 @@ func ntimes(cnt int, cmdName string, cmdArgs []string, stdin io.Reader, stderr i
 
 	for i := 0; i < cnt; i++ {
 		wg.Add(1)
+
 		go func() {
 			sema <- true
 
@@ -89,8 +90,8 @@ func ntimes(cnt int, cmdName string, cmdArgs []string, stdin io.Reader, stderr i
 			cmd.Stdin = stdin
 			cmd.Stdout = stdoutBuffer
 			cmd.Stderr = stderr
-			err := cmd.Run()
 
+			err := cmd.Run()
 			if err != nil {
 				panic(err)
 			}
@@ -106,7 +107,7 @@ func printer(stdout io.Writer, stdoutCh chan io.ReadWriter, exitCh chan bool) {
 	for {
 		select {
 		case r := <-stdoutCh:
-			io.Copy(stdout, r)
+			_, _ = io.Copy(stdout, r)
 		case <-exitCh:
 			return
 		}
