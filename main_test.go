@@ -3,30 +3,40 @@ package main
 import (
 	"bytes"
 	"errors"
-	"io"
 	"os/exec"
 	"testing"
 )
 
-func TestNtimes(t *testing.T) {
-	stdin := new(bytes.Buffer)
-	stdout := new(bytes.Buffer)
-	stderr := new(bytes.Buffer)
+func TestSerial(t *testing.T) {
+	cmd := exec.Command("go", "run", "main.go", "2", "--", "sh", "-c", `echo "Hi!"; sleep 1; echo "Bye"`)
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
 
-	stdoutCh := make(chan io.ReadWriter)
-	exitCh := make(chan bool)
+	expected := "Hi!\nBye\nHi!\nBye\n"
+	if err := cmd.Run(); err != nil {
+		t.Errorf("failed: %v", err)
+	}
 
-	go printer(stdout, stdoutCh, exitCh)
+	if stdout.String() != expected {
+		t.Errorf("stdout doesn't match\nExpected:\n%s\nActual:\n%s", expected, stdout.String())
+	}
+}
+func TestParallel(t *testing.T) {
+	cmd := exec.Command("go", "run", "main.go", "-p", "2", "2", "--", "sh", "-c", `echo "Hi!"; sleep 1; echo "Bye"`)
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
 
-	ntimes(3, "echo", []string{"foo", "bar", "baz"}, stdin, stderr, stdoutCh, 1)
+	expected := "Hi!\nHi!\nBye\nBye\n"
+	if err := cmd.Run(); err != nil {
+		t.Errorf("failed: %v", err)
+	}
 
-	exitCh <- true
-
-	expected := "foo bar baz\nfoo bar baz\nfoo bar baz\n"
-	actual := stdout.String()
-
-	if actual != expected {
-		t.Error("The result does not match\nExpected:\n" + expected + "\nActual:\n" + actual)
+	if stdout.String() != expected {
+		t.Errorf("stdout doesn't match\nExpected:\n%s\nActual:\n%s", expected, stdout.String())
 	}
 }
 
