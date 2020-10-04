@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -54,21 +53,14 @@ func main() {
 	cmdName := args[1]
 	cmdArgs := args[2:]
 
-	stdoutCh := make(chan io.ReadWriter)
-	exitCh := make(chan bool)
-
 	if err != nil {
 		panic(err)
 	}
 
-	go printer(os.Stdout, stdoutCh, exitCh)
-
-	ntimes(cnt, cmdName, cmdArgs, os.Stdin, os.Stderr, stdoutCh, opts.Parallels)
-
-	exitCh <- true
+	ntimes(cnt, cmdName, cmdArgs, os.Stdin, os.Stdout, os.Stderr, opts.Parallels)
 }
 
-func ntimes(cnt int, cmdName string, cmdArgs []string, stdin io.Reader, stderr io.Writer, stdoutCh chan io.ReadWriter, parallels int) {
+func ntimes(cnt int, cmdName string, cmdArgs []string, stdin io.Reader, stdout io.Writer, stderr io.Writer, parallels int) {
 	var wg sync.WaitGroup
 
 	sema := make(chan bool, parallels)
@@ -84,34 +76,20 @@ func ntimes(cnt int, cmdName string, cmdArgs []string, stdin io.Reader, stderr i
 				<-sema
 			}()
 
-			stdoutBuffer := new(bytes.Buffer)
-
 			cmd := exec.Command(cmdName, cmdArgs...)
 			cmd.Stdin = stdin
-			cmd.Stdout = stdoutBuffer
+			cmd.Stdout = stdout
 			cmd.Stderr = stderr
 
 			err := cmd.Run()
 			if err != nil {
 				panic(err)
 			}
-
-			stdoutCh <- stdoutBuffer
 		}()
 	}
 
 	wg.Wait()
-}
-
-func printer(stdout io.Writer, stdoutCh chan io.ReadWriter, exitCh chan bool) {
-	for {
-		select {
-		case r := <-stdoutCh:
-			_, _ = io.Copy(stdout, r)
-		case <-exitCh:
-			return
-		}
-	}
+	close(sema)
 }
 
 func errorf(message string, args ...interface{}) {
